@@ -1,0 +1,9 @@
+setup.py
+src/config/__init__.py
+src/config/personality.py
+src/config/settings.py
+src/spiciest_chip.egg-info/PKG-INFO
+src/spiciest_chip.egg-info/SOURCES.txt
+src/spiciest_chip.egg-info/dependency_links.txt
+src/spiciest_chip.egg-info/requires.txt
+src/spiciest_chip.egg-info/top_level.txt

@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: spiciest_chip
+Version: 0.1
+Requires-Dist: anthropic
+Requires-Dist: python-dotenv
+Requires-Dist: pandas
+Requires-Dist: langchain-community
+Requires-Dist: openai
