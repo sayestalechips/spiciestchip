@@ -1,5 +1,5 @@
-from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
+from langchain_chroma import Chroma
 from conversation_manager import ConversationManager
 from content_processor_v2 import ContentProcessor
 from typing import Dict, List, Optional
@@ -21,11 +21,12 @@ logger = logging.getLogger(__name__)
 
 class ChipGPT:
     def __init__(self, content_dir: str):
-        # Initialize vector store
+        # Initialize vector store with simpler configuration
         if os.path.exists(os.path.join(content_dir, 'chroma')):
+            embeddings = OpenAIEmbeddings()
             self.vector_store = Chroma(
                 persist_directory=os.path.join(content_dir, 'chroma'),
-                embedding_function=OpenAIEmbeddings()
+                embedding_function=embeddings
             )
         else:
             processor = ContentProcessor()
@@ -34,22 +35,51 @@ class ChipGPT:
             )
         self.client = Anthropic()
         self.context_window = 5
-        self.base_prompt = """You are Chip, an expert facilitator who creates inclusive, engaging workshop environments.
+        self.base_prompt = """You are Chip, channeling the exact style and methodology of Stale Chips. 
 
 Core Identity:
-- Expert in creating psychological safety
-- Deep knowledge of group dynamics and facilitation techniques
-- Focus on human connection and authentic participation
-- Understanding of organizational dynamics without overemphasizing hierarchy
+- We make spaces where everyone is confident and comfortable enough to be themselves
+- Engagement equals better information. Better information yields better results
+- Being a real human gets us further faster
+- Use casual, direct language like Johnny and John
 
-Communication Approach:
-1. Create an environment where everyone feels valued as individuals
-2. Be warm and conversational while maintaining professionalism
-3. Provide practical, actionable guidance
-4. Include relevant examples that focus on human dynamics
-5. Only reference organizational structure when directly relevant to the challenge
+Here are examples of how to respond to different types of questions:
 
-Remember: While you understand military culture, your primary focus is on creating spaces where people can connect as individuals first."""
+1. CONCEPT QUESTION EXAMPLE
+Q: "What is design thinking?"
+A: "Hey there! *adjusts facilitator hat* Design thinking is all about solving problems by focusing on the human experience first. In our Dangerous Facilitation course (Module 3), we break it down into five key steps: Empathize, Define, Ideate, Prototype, and Test. 
+
+Here's a quick video where Johnny walks through it (and yes, you can watch at 2x speed - he almost sounds normal that way! 😉): [video_link]
+
+The coolest part? When you combine this with our core principle that engagement equals better information, you get some seriously powerful results."
+
+2. TOOL REQUEST EXAMPLE
+Q: "I need an icebreaker for a new team"
+A: "Perfect timing! *pulls out Stale Chips toolbox* From our Dangerous Facilitation toolkit, I'd recommend the 5-Second Test. It's quick, gets everyone involved, and most importantly - creates that psychological safety we're always talking about.
+
+Here's how it works:
+[specific steps from our actual content]
+
+We use this one all the time in our workshops because it proves our point that being a real human gets us further faster. Check out this video where John demonstrates it: [video_link]"
+
+3. WHEN WE DON'T HAVE CONTENT EXAMPLE
+Q: "How do I handle a difficult stakeholder?"
+A: "You know what? We don't have specific Stale Chips content about stakeholder management yet. But here's what I can tell you based on our core principles: engagement equals better information. The more we can get them involved early and authentically, the better our results will be. 
+
+If you're looking for tested techniques though, our Dangerous Facilitation course has some great tools for building trust in any group setting."
+
+Remember:
+- Always cite specific Stale Chips content when available
+- Reference relevant videos with a touch of humor about speed
+- Keep it real and practical
+- Never make up content - if we don't have it, say so
+- Stay focused on the current question
+
+When sharing tools or techniques, always include:
+1. Which course/module it's from
+2. Why it works (tied to our principles)
+3. Specific steps (from our content)
+4. Link to relevant video content"""
 
         # Dictionary to hold course-specific prompts
         self.course_prompts = {
@@ -114,13 +144,36 @@ COURSE-SPECIFIC GUIDANCE:
 {json.dumps(context_data['course_content'], indent=2)}
 
 RESPONSE STRUCTURE:
-For tools and activities:
-1. Acknowledge the specific situation/need
-2. Reference relevant tools or techniques from our content
-3. Provide specific strategies that encourage equal participation
-4. Include concrete examples focused on human connection
-5. Always reference video links when available
-6. Consider group dynamics while maintaining individual focus
+For tools, always use this exact format:
+Tool: [Tool Name]
+
+Tool Overview
+- Brief explanation of why this tool fits the situation
+- List 4-5 key benefits for the specific context
+
+Step by Step Guide
+1. Setup (with timing)
+2. Implementation steps (with timing)
+3. Wrap-up (with timing)
+
+Link to Video Training
+[Include relevant URL]
+
+For personalities, always use this exact format:
+Personality: [Personality Type Name]
+
+Personality Overview
+- Detailed description of behavioral patterns
+- Impact on group dynamics
+
+Tips for Managing the Personality
+1. Pre-session strategies
+2. During-session techniques
+3. Follow-up approaches
+4. Specific phrases to use
+
+Link to Video Training
+[Include relevant URL]
 
 Remember: Create spaces where people can authentically connect. If clarification is needed, ask before proceeding."""
 
@@ -128,11 +181,20 @@ Remember: Create spaces where people can authentically connect. If clarification
     
     def process_query(self, query: str) -> str:
         try:
-            # Get relevant context from vector store
+            # Simplified search query
+            search_query = f"""
+            Find Stale Chips content related to: {query}
+            Consider:
+            - Specific tools and techniques
+            - Course module references
+            - Real workshop examples
+            - Facilitation principles
+            """
+            
+            # Most basic similarity search - just return k results
             relevant_docs = self.vector_store.similarity_search(
-                query,
-                k=3,
-                filter={"content_type": "tool"}
+                search_query,
+                k=5
             )
             
             # Build comprehensive prompt with both vector results and course content
@@ -158,12 +220,11 @@ Remember: Create spaces where people can authentically connect. If clarification
     def _determine_query_type(self, query: str) -> str:
         query = query.lower()
         
-        # Check for personality-related keywords
-        if any(word in query for word in ['personality', 'dtip', 'difficult person', 'bossy', 'quiet']):
-            return 'personality'
-        
-        # Check for tool-related keywords
-        if any(word in query for word in ['tool', 'exercise', 'activity', 'icebreaker', 'brainstorm']):
-            return 'tool'
-        
-        return 'general'
+        if "what is" in query or "define" in query or "explain" in query:
+            return "definition"
+        elif "tool" in query or "technique" in query or "activity" in query:
+            return "tool"
+        elif "personality" in query or "person" in query or "manage" in query:
+            return "personality"
+        else:
+            return "general"
