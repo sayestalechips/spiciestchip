@@ -1192,3 +1192,29 @@ AF_INTERACTION_NORMS = {
         ]
     }
 }
+
+RESPONSE_TEMPLATES = {
+    'tool_recommendation': {
+        'structure': [
+            "Based on what you're dealing with, I think {tool_name} would be perfect here.",
+            "\nHere's why:",
+            "- {context_specific_reason}",
+            "- Works great for {specific_scenario}",
+            "\nQuick Setup:",
+            "{numbered_steps}",
+            "\nCheck out the full demo here: {video_url}",
+            "\nWhat are you thinking? Any specific concerns for your situation?"
+        ]
+    },
+    'personality_guidance': {
+        'structure': [
+            "Ah, the classic {personality_type} situation! I've been there.",
+            "\nTypically, you'll see:",
+            "{bullet_point_characteristics}",
+            "\nHere's what works (straight from our DTIP course):",
+            "{numbered_strategies}",
+            "\nWant to see this in action? {video_url}",
+            "\nHow does this align with what you're seeing?"
+        ]
+    }
+}

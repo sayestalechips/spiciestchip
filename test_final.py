@@ -18,17 +18,32 @@ def run_cli():
         content_dir = os.path.join('data', 'processed')
         os.makedirs(content_dir, exist_ok=True)
         
-        logger.info("Initializing ChipGPT...")
+        logger.info("Initializing ChipGPT with enhanced query processing...")
         chip = ChipGPT(content_dir)
         
-        print("\nWelcome to Chip! Type 'exit' to quit.\n")
+        print("\nWelcome to Chip! Type 'exit' to quit.")
+        print("Special commands:")
+        print("- 'debug': Show query classification details")
+        print("- 'verbose': Toggle verbose mode for seeing content sources\n")
+        
+        verbose_mode = False
+        
         while True:
             query = input("You: ").strip()
+            
             if query.lower() == 'exit':
                 print("\nThanks for chatting! Goodbye!\n")
                 break
+                
+            if query.lower() == 'verbose':
+                verbose_mode = not verbose_mode
+                print(f"\nVerbose mode: {'ON' if verbose_mode else 'OFF'}\n")
+                continue
+                
             print("-" * 50)
             try:
+                if verbose_mode:
+                    logger.info("Processing query...")
                 response = chip.process_query(query)
                 print(f"\nChip: {response}\n")
             except Exception as e:
